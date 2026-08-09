@@ -66,28 +66,40 @@ function Reports({ students }) {
                   <div className="chart-bar emerald" style={{ height: `${excellentPct}%` }}>
                     <span className="chart-tooltip">Excellent: {excellentCount} students ({excellentPct}%)</span>
                   </div>
-                  <span className="chart-label">Excellent (3.80 - 4.00)</span>
+                  <span className="chart-label">
+                    <span className="full-label">Excellent (3.80 - 4.00)</span>
+                    <span className="short-label">Excellent</span>
+                  </span>
                 </div>
                 
                 <div className="chart-bar-wrapper">
                   <div className="chart-bar cyan" style={{ height: `${goodPct}%` }}>
                     <span className="chart-tooltip">Good: {goodCount} students ({goodPct}%)</span>
                   </div>
-                  <span className="chart-label">Good (3.00 - 3.79)</span>
+                  <span className="chart-label">
+                    <span className="full-label">Good (3.00 - 3.79)</span>
+                    <span className="short-label">Good</span>
+                  </span>
                 </div>
                 
                 <div className="chart-bar-wrapper">
                   <div className="chart-bar amber" style={{ height: `${passPct}%` }}>
                     <span className="chart-tooltip">Pass: {passCount} students ({passPct}%)</span>
                   </div>
-                  <span className="chart-label">Pass (2.00 - 2.99)</span>
+                  <span className="chart-label">
+                    <span className="full-label">Pass (2.00 - 2.99)</span>
+                    <span className="short-label">Pass</span>
+                  </span>
                 </div>
                 
                 <div className="chart-bar-wrapper">
                   <div className="chart-bar rose" style={{ height: `${failPct}%` }}>
                     <span className="chart-tooltip">Struggling: {failCount} students ({failPct}%)</span>
                   </div>
-                  <span className="chart-label">Struggling (&lt; 2.00)</span>
+                  <span className="chart-label">
+                    <span className="full-label">Struggling (&lt; 2.00)</span>
+                    <span className="short-label">Struggling</span>
+                  </span>
                 </div>
               </div>
             )}

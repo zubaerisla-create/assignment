@@ -70,7 +70,6 @@ function StudentList({
         <div className="action-buttons">
           <select 
             className="form-input" 
-            style={{ width: 'auto', padding: '0.65rem 1rem' }}
             value={courseFilter}
             onChange={(e) => setCourseFilter(e.target.value)}
           >
@@ -82,7 +81,6 @@ function StudentList({
 
           <select 
             className="form-input" 
-            style={{ width: 'auto', padding: '0.65rem 1rem' }}
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
           >

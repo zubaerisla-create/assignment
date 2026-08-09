@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Routes, Route, Navigate, useNavigate, useLocation, NavLink } from 'react-router-dom';
 import './App.css';
 
 // Components
@@ -10,19 +11,44 @@ import GradeAttendanceModal from './components/GradeAttendanceModal';
 import Reports from './components/Reports';
 import BackupRecovery from './components/BackupRecovery';
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'https://server-seven-flame-96.vercel.app/api';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const navigate = useNavigate();
+  const location = useLocation();
+  
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+
+  // Mobile menu state
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Modal states
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [gradeAttendanceModalOpen, setGradeAttendanceModalOpen] = useState(false);
   const [gradeAttendanceMode, setGradeAttendanceMode] = useState('grade');
+
+  // Derive active tab from location
+  const getActiveTab = () => {
+    const path = location.pathname;
+    if (path.startsWith('/students')) return 'students';
+    if (path.startsWith('/reports')) return 'reports';
+    if (path.startsWith('/backup')) return 'backup';
+    return 'dashboard';
+  };
+
+  const activeTab = getActiveTab();
+
+  const handleTabChange = (tab) => {
+    setIsMobileMenuOpen(false);
+    if (tab === 'dashboard') {
+      navigate('/');
+    } else {
+      navigate(`/${tab}`);
+    }
+  };
 
   // Fetch all student records
   const fetchStudents = async () => {
@@ -81,11 +107,11 @@ function App() {
     try {
       if (selectedStudent) {
         // Edit Mode
-        const response = await axios.put(`${API_BASE}/students/${formData.id}`, formData);
+        await axios.put(`${API_BASE}/students/${formData.id}`, formData);
         triggerToast('success', `Student '${formData.name}' updated successfully.`);
       } else {
         // Add Mode
-        const response = await axios.post(`${API_BASE}/students`, formData);
+        await axios.post(`${API_BASE}/students`, formData);
         triggerToast('success', `Student '${formData.name}' enrolled successfully.`);
       }
       setFormModalOpen(false);
@@ -157,102 +183,114 @@ function App() {
     }
   };
 
-  // Render Page Content based on Active Tab
-  const renderTabContent = () => {
-    if (loading && students.length === 0) {
-      return (
-        <div className="loading-container">
-          <div className="spinner"></div>
-          <p>Connecting to database. Please wait...</p>
-        </div>
-      );
-    }
-
-    switch (activeTab) {
-      case 'dashboard':
-        return (
-          <Dashboard 
-            students={students} 
-            setActiveTab={setActiveTab} 
-            onAddClick={handleAddClick} 
-          />
-        );
-      case 'students':
-        return (
-          <StudentList 
-            students={students}
-            onEditClick={handleEditClick}
-            onDeleteClick={handleDeleteClick}
-            onGradeClick={handleGradeClick}
-            onAttendanceClick={handleAttendanceClick}
-            onAddClick={handleAddClick}
-          />
-        );
-      case 'reports':
-        return <Reports students={students} />;
-      case 'backup':
-        return (
-          <BackupRecovery 
-            onBackup={handleDatabaseBackup} 
-            onRecover={handleDatabaseRecover} 
-          />
-        );
-      default:
-        return <div>Tab not found.</div>;
-    }
-  };
-
   return (
     <div className="app-container">
-      {/* Sidebar Navigation */}
-      <aside className="sidebar">
-        <div className="brand">
+      {/* Sidebar Overlay Backdrop for Mobile Drawer */}
+      {isMobileMenuOpen && (
+        <div 
+          className="sidebar-overlay" 
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile Top Navbar Header */}
+      <header className="mobile-header">
+        <button 
+          className="menu-toggle-btn" 
+          onClick={() => setIsMobileMenuOpen(true)}
+          aria-label="Open navigation menu"
+        >
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <div className="mobile-brand">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
           </svg>
           <span>SRMS Pro</span>
         </div>
+        <div style={{ fontSize: '0.8rem', color: 'var(--success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <span style={{ display: 'inline-block', width: '6px', height: '6px', backgroundColor: 'var(--success)', borderRadius: '50%' }}></span>
+          Active
+        </div>
+      </header>
+
+      {/* Sidebar Navigation */}
+      <aside className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
+        {/* Mobile Sidebar Close and Brand Header */}
+        <div className="sidebar-header-mobile">
+          <div className="brand">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            <span>SRMS Pro</span>
+          </div>
+          <button 
+            className="menu-close-btn" 
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-label="Close navigation menu"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Desktop Sidebar Brand Header */}
+        <div className="brand-desktop">
+          <div className="brand">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            <span>SRMS Pro</span>
+          </div>
+        </div>
 
         <nav className="nav-links">
-          <button 
-            className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('dashboard')}
+          <NavLink 
+            to="/" 
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            onClick={() => setIsMobileMenuOpen(false)}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" />
             </svg>
             Dashboard
-          </button>
+          </NavLink>
 
-          <button 
-            className={`nav-item ${activeTab === 'students' ? 'active' : ''}`}
-            onClick={() => setActiveTab('students')}
+          <NavLink 
+            to="/students" 
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            onClick={() => setIsMobileMenuOpen(false)}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
             Manage Students
-          </button>
+          </NavLink>
 
-          <button 
-            className={`nav-item ${activeTab === 'reports' ? 'active' : ''}`}
-            onClick={() => setActiveTab('reports')}
+          <NavLink 
+            to="/reports" 
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            onClick={() => setIsMobileMenuOpen(false)}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" />
             </svg>
             Academic Reports
-          </button>
+          </NavLink>
 
-          <button 
-            className={`nav-item ${activeTab === 'backup' ? 'active' : ''}`}
-            onClick={() => setActiveTab('backup')}
+          <NavLink 
+            to="/backup" 
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            onClick={() => setIsMobileMenuOpen(false)}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
             </svg>
             Backup & Recovery
-          </button>
+          </NavLink>
         </nav>
       </aside>
 
@@ -274,13 +312,55 @@ function App() {
               {activeTab === 'backup' && 'Execute local database snapshots or recover files from system storage.'}
             </p>
           </div>
-          <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+          <div className="status-badge-desktop" style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 500 }}>
             System Status: <span style={{ color: 'var(--success)' }}>● Active</span>
           </div>
         </header>
 
-        {/* Render active content tab */}
-        {renderTabContent()}
+        {/* Render active content route */}
+        {loading && students.length === 0 ? (
+          <div className="loading-container">
+            <div className="spinner"></div>
+            <p>Connecting to database. Please wait...</p>
+          </div>
+        ) : (
+          <Routes>
+            <Route 
+              path="/" 
+              element={
+                <Dashboard 
+                  students={students} 
+                  setActiveTab={handleTabChange} 
+                  onAddClick={handleAddClick} 
+                />
+              } 
+            />
+            <Route 
+              path="/students" 
+              element={
+                <StudentList 
+                  students={students}
+                  onEditClick={handleEditClick}
+                  onDeleteClick={handleDeleteClick}
+                  onGradeClick={handleGradeClick}
+                  onAttendanceClick={handleAttendanceClick}
+                  onAddClick={handleAddClick}
+                />
+              } 
+            />
+            <Route path="/reports" element={<Reports students={students} />} />
+            <Route 
+              path="/backup" 
+              element={
+                <BackupRecovery 
+                  onBackup={handleDatabaseBackup} 
+                  onRecover={handleDatabaseRecover} 
+                />
+              } 
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        )}
       </main>
 
       {/* Enroll / Modify Student Form Modal */}

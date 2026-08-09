@@ -15,11 +15,11 @@ const PORT = process.env.PORT || 5000;
 // Resolve paths for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const backupDir = path.join(__dirname, 'backups');
+const backupDir = process.env.VERCEL ? '/tmp' : path.join(__dirname, 'backups');
 const backupPath = path.join(backupDir, 'backup.json');
 
 // Ensure backups directory exists
-if (!fs.existsSync(backupDir)) {
+if (!process.env.VERCEL && !fs.existsSync(backupDir)) {
   fs.mkdirSync(backupDir, { recursive: true });
 }
 
@@ -27,16 +27,52 @@ if (!fs.existsSync(backupDir)) {
 app.use(cors());
 app.use(express.json());
 
-// Database Connection
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ MongoDB connected successfully'))
-  .catch((err) => {
-    console.error('❌ Database connection error:', err);
-    process.exit(1);
+// Database connection caching for Serverless environments
+let cachedConnection = null;
+
+const connectToDatabase = async () => {
+  if (cachedConnection && mongoose.connection.readyState === 1) {
+    return cachedConnection;
+  }
+
+  // If connection is connecting, wait for it
+  if (mongoose.connection.readyState === 2) {
+    return mongoose.connection.asPromise();
+  }
+
+  console.log('Connecting to MongoDB Atlas...');
+  cachedConnection = await mongoose.connect(process.env.MONGODB_URI, {
+    serverSelectionTimeoutMS: 5000 // Fail fast if IP is blocked (5s instead of hanging)
   });
+  console.log('✅ MongoDB connected successfully');
+  return cachedConnection;
+};
+
+// Database Connection Middleware
+app.use(async (req, res, next) => {
+  // Skip DB connection for root and status routes to keep checks responsive
+  if (req.path === '/' || req.path === '/api/status') {
+    return next();
+  }
+  
+  try {
+    await connectToDatabase();
+    next();
+  } catch (error) {
+    console.error('❌ Database connection error:', error);
+    res.status(500).json({ 
+      message: 'Failed to connect to database. Make sure your MongoDB Atlas IP Access List allows access from anywhere (0.0.0.0/0).', 
+      error: error.message 
+    });
+  }
+});
 
 // --- API Endpoints ---
+
+// Root Endpoint
+app.get('/', (req, res) => {
+  res.json({ message: 'Welcome to SRMS Pro API Server', status: 'running' });
+});
 
 // 1. Get all students (with optional search)
 app.get('/api/students', async (req, res) => {
@@ -253,6 +289,10 @@ app.get('/api/status', (req, res) => {
   res.json({ status: 'running', database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected' });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+  });
+}
+
+export default app;
