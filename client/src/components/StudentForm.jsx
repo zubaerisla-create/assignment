@@ -7,7 +7,9 @@ function StudentForm({ isOpen, onClose, onSubmit, student }) {
     age: '',
     contact: '',
     admissionDate: '',
-    course: ''
+    course: '',
+    grades: '',
+    attendance: ''
   });
 
   const isEditMode = !!student;
@@ -20,7 +22,9 @@ function StudentForm({ isOpen, onClose, onSubmit, student }) {
         age: student.age || '',
         contact: student.contact || '',
         admissionDate: student.admissionDate || '',
-        course: student.course || ''
+        course: student.course || '',
+        grades: student.grades !== undefined ? student.grades : '0.00',
+        attendance: student.attendance !== undefined ? student.attendance : '0'
       });
     } else {
       // Set default admission date to today (YYYY-MM-DD format)
@@ -31,7 +35,9 @@ function StudentForm({ isOpen, onClose, onSubmit, student }) {
         age: '',
         contact: '',
         admissionDate: today,
-        course: ''
+        course: '',
+        grades: '0.00',
+        attendance: '0'
       });
     }
   }, [student, isOpen]);
@@ -51,7 +57,7 @@ function StudentForm({ isOpen, onClose, onSubmit, student }) {
     
     // Basic validation
     if (!formData.id || !formData.name || !formData.age || !formData.contact || !formData.admissionDate || !formData.course) {
-      alert('Please fill out all fields.');
+      alert('Please fill out all required fields.');
       return;
     }
     
@@ -149,6 +155,36 @@ function StudentForm({ isOpen, onClose, onSubmit, student }) {
                 value={formData.admissionDate} 
                 onChange={handleChange}
                 required
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Grade / CGPA (0.00 - 4.00)</label>
+              <input 
+                type="number" 
+                step="0.01" 
+                min="0.00" 
+                max="4.00" 
+                name="grades" 
+                className="form-input" 
+                placeholder="e.g. 3.75"
+                value={formData.grades} 
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Attendance (Days Attended)</label>
+              <input 
+                type="number" 
+                min="0" 
+                name="attendance" 
+                className="form-input" 
+                placeholder="e.g. 45"
+                value={formData.attendance} 
+                onChange={handleChange}
               />
             </div>
           </div>

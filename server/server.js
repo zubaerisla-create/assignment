@@ -146,15 +146,30 @@ app.post('/api/students', async (req, res) => {
 app.put('/api/students/:id', async (req, res) => {
   try {
     const studentId = Number(req.params.id);
-    const { name, age, contact, admissionDate, course } = req.body;
+    const { name, age, contact, admissionDate, course, grades, attendance } = req.body;
 
     if (!name || !age || !contact || !admissionDate || !course) {
       return res.status(400).json({ message: 'All fields are required.' });
     }
 
+    const updateFields = { 
+      name, 
+      age: Number(age), 
+      contact, 
+      admissionDate, 
+      course 
+    };
+
+    if (grades !== undefined && !isNaN(Number(grades))) {
+      updateFields.grades = Number(grades);
+    }
+    if (attendance !== undefined && !isNaN(Number(attendance))) {
+      updateFields.attendance = Math.max(0, Number(attendance));
+    }
+
     const updated = await Student.findOneAndUpdate(
       { id: studentId },
-      { name, age: Number(age), contact, admissionDate, course },
+      updateFields,
       { new: true, runValidators: true }
     );
 
@@ -210,24 +225,26 @@ app.patch('/api/students/:id/grade', async (req, res) => {
   }
 });
 
-// 6. Manage Attendance (Increment Attendance days)
+// 6. Manage Attendance (Update or Increment Attendance days)
 app.patch('/api/students/:id/attendance', async (req, res) => {
   try {
     const studentId = Number(req.params.id);
-    const { days } = req.body;
-
-    if (!days || isNaN(Number(days))) {
-      return res.status(400).json({ message: 'Valid days parameter is required.' });
-    }
+    const { days, attendance } = req.body;
 
     const student = await Student.findOne({ id: studentId });
     if (!student) {
       return res.status(404).json({ message: 'Student not found.' });
     }
 
-    student.attendance += Number(days);
-    const updated = await student.save();
+    if (attendance !== undefined && !isNaN(Number(attendance))) {
+      student.attendance = Math.max(0, Number(attendance));
+    } else if (days !== undefined && !isNaN(Number(days))) {
+      student.attendance = Math.max(0, student.attendance + Number(days));
+    } else {
+      return res.status(400).json({ message: 'Valid attendance or days value is required.' });
+    }
 
+    const updated = await student.save();
     res.json(updated);
   } catch (error) {
     res.status(500).json({ message: 'Error updating attendance', error: error.message });
