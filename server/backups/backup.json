@@ -1,0 +1,16 @@
+[
+  {
+    "_id": "6a78a2a79b1c7a2c04b960d7",
+    "id": 24135029,
+    "name": "MD Mahbub Zaman",
+    "age": 21,
+    "contact": "+8801700000000",
+    "admissionDate": "2026-08-09",
+    "course": "SE 133",
+    "grades": 3.85,
+    "attendance": 8,
+    "createdAt": "2026-08-09T15:54:15.902Z",
+    "updatedAt": "2026-08-09T15:55:55.725Z",
+    "__v": 0
+  }
+]
